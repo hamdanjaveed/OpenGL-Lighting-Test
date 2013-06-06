@@ -19,7 +19,11 @@ public class Main {
 
 	private Camera camera;
 
-	private Cube cube = new Cube(new Vector3f(0, 0, 0), 1);
+	private Cube cube = new Cube(new Vector3f(1, 1, -1), 1);
+	private Plane plane = new Plane(new Vector3f(5, 0, -5), new Vector3f(-1, 0, -1), new Vector3f(1, 0, 1), new Vector3f(1, 2, 1), new Vector3f(-1, 2, -1));
+	private Plane plane2 = new Plane(new Vector3f(5.1f, 0, -5.1f), new Vector3f(1, 0, 1), new Vector3f(-1, 0, -1), new Vector3f(-1, 2, -1), new Vector3f(1, 2, 1));
+
+	private Vector3f lightPosition = new Vector3f(-5, 0, 0);
 
 	public static void main(String[] args) {
 		new Main();
@@ -57,8 +61,13 @@ public class Main {
 		// clear the screen and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//renderTriangle();
 		renderCube();
+		renderLightPoint();
+		plane.draw();
+		plane2.draw();
+
+		if (glGetError() != 0)
+			System.out.println(glGetError());
 
 		glLoadIdentity();
 		camera.lookThrough();
@@ -66,6 +75,16 @@ public class Main {
 
 	private void renderCube() {
 		cube.draw();
+	}
+
+	private void renderLightPoint() {
+		glPushMatrix(); {
+			glPointSize(10);
+			glBegin(GL_POINTS); {
+				glColor3f(1, 1, 1);
+				glVertex3f(lightPosition.x, lightPosition.y, lightPosition.z);
+			}glEnd();
+		} glPopMatrix();
 	}
 
 	private void initGL() {
@@ -87,7 +106,16 @@ public class Main {
 		glLightModel(GL_LIGHT_MODEL_AMBIENT, asFloatBuffer(0.05f, 0.05f, 0.05f, 1f));
 		glEnable(GL_COLOR_MATERIAL);
 		glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
-		glLight(GL_LIGHT0, GL_POSITION, asFloatBuffer(0, 0, 0, 1));
+
+		float light_ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float light_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		float light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		float light_position[] = { 1.0f, 1.0f, 1.0f, 0.0f };
+		glLight(GL_LIGHT0, GL_POSITION, asFloatBuffer(lightPosition.x, lightPosition.y, lightPosition.z, 1));
+		glLight(GL_LIGHT0, GL_AMBIENT, asFloatBuffer(light_ambient));
+		glLight(GL_LIGHT0, GL_DIFFUSE, asFloatBuffer(light_diffuse));
+		glLight(GL_LIGHT0, GL_SPECULAR, asFloatBuffer(light_specular));
+		glLight(GL_LIGHT0, GL_POSITION, asFloatBuffer(light_position));
 
 		camera = new Camera(0, 0, 0);
 
@@ -145,6 +173,10 @@ public class Main {
 		float[] data = new float[] {
 			x, y, z, w
 		};
+		return asFloatBuffer(data);
+	}
+
+	private FloatBuffer asFloatBuffer(float[] data) {
 		FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(data.length);
 		floatBuffer.put(data);
 		floatBuffer.flip();
